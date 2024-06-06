@@ -74,9 +74,12 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
             Route::get('products', [ShopifyController::class, 'products'])->name('shopify.products');
             Route::get('sync/locations', [ShopifyController::class, 'syncLocations'])->name('locations.sync');
             Route::get('products/create', [ProductsController::class, 'create'])->name('shopify.product.create');
+            Route::get('products/createurl', [ProductsController::class, 'createurl'])->name('shopify.product.createurl');
             Route::get('add_variant', [ProductsController::class, 'getHTMLForAddingVariant'])->name('product.add.variant');
             Route::get('sync/products', [ShopifyController::class, 'syncProducts'])->name('shopify.products.sync');
             Route::post('products/publish', [ProductsController::class, 'publishProduct'])->name('shopify.product.publish');
+            Route::post('products/publishurl', [ProductsController::class, 'publishProductUrl'])->name('shopify.product.publishurl');
+
             Route::get('changeProductAddToCartStatus', [ProductsController::class, 'changeProductAddToCartStatus'])->name('change.product.addToCart');
         });
         Route::middleware('permission:write-orders|read-orders')->group(function () {

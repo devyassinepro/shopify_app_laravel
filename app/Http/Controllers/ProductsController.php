@@ -21,8 +21,18 @@ class ProductsController extends Controller {
         $user = Auth::user();
         $store = $user->getShopifyStore;
         $locations = $this->getLocationsForStore($store);
+        // Log::info($locations);
         return view('products.create', ['locations' => $locations]);
     }
+
+    public function createurl() {
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $locations = $this->getLocationsForStore($store);
+        // Log::info($locations);
+        return view('products.createurl', ['locations' => $locations]);
+    }
+
 
     private function getLocationsForStore($store) {
         $locations = $store->getLocations()
@@ -65,19 +75,101 @@ class ProductsController extends Controller {
         return back()->with('success', 'Product Created!');
     }
 
-    private function returnTags($tags) {
+    public function publishProductUrl(Request $request) {
+        $request = $request->all();
+
+        echo $request['url'];
+        echo "Loading Url";
+        $user = Auth::user();
+        $store = $user->getShopifyStore;
+        $locations = $this->getLocationsForStore($store);
+        $productCreateMutation = 'productCreate (input: {'.$this->getGraphQLPayloadForProductPublishUrl($store, $request, $locations).'}) { 
+            product { id }
+            userErrors { field message }
+        }';
+        Log::info("Json file ".$productCreateMutation);
+        $mutation = 'mutation { '.$productCreateMutation.' }';
+        $endpoint = getShopifyURLForStore('graphql.json', $store);
+        $headers = getShopifyHeadersForStore($store);
+        $payload = ['query' => $mutation];
+        $response = $this->makeAnAPICallToShopify('POST', $endpoint, null, $headers, $payload);
+        Product::dispatch($user, $store);
+        return back()->with('success', 'Product Created!');
+    }
+
+
+    private function getGraphQLPayloadForProductPublishUrl($store, $request, $locations) {
+        $url = $request['url'];
+        $opts = array('http' => array('header' => "User-Agent:MyAgent/1.0\r\n"));
+        $context = stream_context_create($opts);
+        $html = file_get_contents($url . '.json', false, $context);
+        $productData = json_decode($html, true);
+
+        $temp = [];
+        $temp[] = 
+          ' title: "'.$productData['product']['title'].'",
+            published: true,
+            vendor: "'.$productData['product']['vendor'].'" ';
+        if(isset($productData['product']['body_html']) && $productData['product']['body_html'] !== null)
+            $temp[] = ' descriptionHtml: "'.$productData['product']['body_html'].'"';
+        if(isset($request['product_type'])) 
+            $temp[] = ' productType: "'.$productData['product']['product_type'].'"';
+            $temp[] = ' tags: ['.$productData['product']['tags'].']';
+            if (isset($productData['product']['options']) && is_array($productData['product']['options'])) {
+                $options = array_map(function($option) {
+                    return $option['name'];
+                }, $productData['product']['options']);
+                $temp[] = 'options: ["'.implode('", "', $options).'"]';
+            }
+        
+            if (isset($productData['product']['variants']) && is_array($productData['product']['variants'])) {
+                $temp[] = 'variants: ['.$this->getVariantsGraphQLConfigUrl($store, $productData, $locations).']';
+            }
+        
+            return implode(',', $temp);
+    }
+
+    private function getVariantsGraphQLConfigUrl($store, $productData, $locations) {
         try {
-            $tags = explode(',', $tags);
-            $return_val = [];
-            foreach($tags as $tag)
-                $return_val[] = '"'.$tag.'"';
-            return implode(',', $return_val);
-        } catch(Exception $e) {
+            $str = [];
+            foreach ($productData['product']['variants'] as $key => $variant) {
+                $str[] = '{
+                    taxable: false,
+                    title: "'.$variant['title'].'",
+                    compareAtPrice: '.$variant['compare_at_price'].',
+                    sku: "'.$variant['sku'].'",
+                    options: ["'.$variant['option1'].'"],
+                    inventoryItem: {cost: '.$variant['price'].', tracked: true},
+                    inventoryQuantities: '.$this->getInventoryQuantitiesStringUrl($key, $productData, $locations).',
+                    inventoryManagement: '.($store->hasRegisteredForFulfillmentService() === 1 ? 'FULFILLMENT_SERVICE' : 'SHOPIFY').',
+                    inventoryPolicy: DENY,
+                    price: '.$variant['price'].'
+                }';
+            }
+            return implode(',', $str); 
+        } catch (Exception $e) {
+            dd($e->getMessage().' '.$e->getLine());
             return null;
         }
     }
+    
+    public function getInventoryQuantitiesStringUrl($key, $request, $locations) {
+        $str = '[';
+        $temp_payload = [];
+        foreach ($locations as $location) {
+            if (isset($request[$location['id'].'_inventory_'.($key + 1)])) {
+                $temp_payload[] = '{ availableQuantity: '.$request[$location['id'].'_inventory_'.($key + 1)].', locationId: "'.$location['admin_graphql_api_id'].'" }';
+            }
+        }
+        $str .= implode(',', $temp_payload);
+        $str .= ']';
+        return $str;
+    }
+
+
 
     private function getGraphQLPayloadForProductPublish($store, $request, $locations) {
+    
         $temp = [];
         $temp[] = 
           ' title: "'.$request['title'].'",
@@ -122,6 +214,17 @@ class ProductsController extends Controller {
         }
     }
 
+    private function returnTags($tags) {
+        try {
+            $tags = explode(',', $tags);
+            $return_val = [];
+            foreach($tags as $tag)
+                $return_val[] = '"'.$tag.'"';
+            return implode(',', $return_val);
+        } catch(Exception $e) {
+            return null;
+        }
+    }
     //Had to do $key + 1 because PHP starts its arrays with 0 and i was having counter starting from 1 in the frontend
     public function getInventoryQuantitiesString($key, $request, $locations) {
         $str = '[';
