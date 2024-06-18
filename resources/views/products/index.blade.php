@@ -17,7 +17,8 @@
               <tbody>
                 <tr>
                   <td><a href="{{route('shopify.product.create')}}" style="float:right" class="btn btn-success">Create Product</a></td>
-                  <td><a href="{{route('shopify.product.createurl')}}" style="float:right" class="btn btn-success">import Product</a></td>
+                  <td><a href="{{route('shopify.product.importproduct')}}" style="float:right" class="btn btn-success">import Product</a></td>
+                  <td><a href="{{route('shopify.product.importstore')}}" style="float:right" class="btn btn-success">import Store</a></td>
                   <td><a href="{{route('shopify.products.sync')}}" style="float: right" class="btn btn-primary">Sync Products</a></td>
                 </tr>
               </tbody>

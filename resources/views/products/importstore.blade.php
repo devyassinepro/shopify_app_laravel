@@ -8,7 +8,7 @@
             <nav>
                 <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{route('home')}}">Home</a></li>
-                <li class="breadcrumb-item">Create Product</li>
+                <li class="breadcrumb-item">Import Store </li>
                 </ol>
             </nav>
         </div>
@@ -31,14 +31,14 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Create a product</h5>
+                    <h5 class="card-title">Import Store</h5>
                     <!-- Floating Labels Form -->
-                    <form class="row g-3" method="POST" action="{{route('shopify.product.publishurl')}}">
+                    <form class="row g-3" method="POST" action="{{route('shopify.product.publishStoreUrl')}}">
                         @csrf
                         <div class="col-md-12">
                             <div class="form-floating">
-                            <input type="text" class="form-control" id="floatingName" name="url" placeholder="Product Url" required>
-                            <label for="floatingName">Product Url</label>
+                            <input type="text" class="form-control" id="floatingName" name="url" placeholder="Store Url" required>
+                            <label for="floatingName">Store Url</label>
                             </div>
                         </div>
                         <div class="text-center">

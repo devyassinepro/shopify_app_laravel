@@ -74,12 +74,13 @@ Route::middleware(['two_fa', 'auth'])->group(function () {
             Route::get('products', [ShopifyController::class, 'products'])->name('shopify.products');
             Route::get('sync/locations', [ShopifyController::class, 'syncLocations'])->name('locations.sync');
             Route::get('products/create', [ProductsController::class, 'create'])->name('shopify.product.create');
-            Route::get('products/createurl', [ProductsController::class, 'createurl'])->name('shopify.product.createurl');
+            Route::get('products/importproduct', [ProductsController::class, 'importproduct'])->name('shopify.product.importproduct');
+            Route::get('products/importstore', [ProductsController::class, 'importstore'])->name('shopify.product.importstore');
             Route::get('add_variant', [ProductsController::class, 'getHTMLForAddingVariant'])->name('product.add.variant');
             Route::get('sync/products', [ShopifyController::class, 'syncProducts'])->name('shopify.products.sync');
             Route::post('products/publish', [ProductsController::class, 'publishProduct'])->name('shopify.product.publish');
-            Route::post('products/publishurl', [ProductsController::class, 'publishProductUrl'])->name('shopify.product.publishurl');
-
+            Route::post('products/publishProductUrl', [ProductsController::class, 'publishProductUrl'])->name('shopify.product.publishproducturl');
+            Route::post('products/publishStoreUrl', [ProductsController::class, 'publishStoreUrl'])->name('shopify.product.publishStoreUrl');
             Route::get('changeProductAddToCartStatus', [ProductsController::class, 'changeProductAddToCartStatus'])->name('change.product.addToCart');
         });
         Route::middleware('permission:write-orders|read-orders')->group(function () {
